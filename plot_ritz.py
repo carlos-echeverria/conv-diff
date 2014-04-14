@@ -22,23 +22,28 @@ def main():
     H = solver.H
     n_, n = H.shape
 
-    fig, ax = pyplot.subplots()
-    line, = ax.plot([], [], '.')
+    fig, axs = pyplot.subplots(ncols=2)
+    line_res, = axs[0].plot([], [])
+    line_roots, = axs[1].plot([], [], '.')
+
+    axs[0].set_yscale('log')
+    axs[0].set_xlim(0, n)
+    axs[0].set_ylim(numpy.min(solver.resnorms), numpy.max(solver.resnorms))
 
     all_roots = numpy.concatenate([
         get_gmres_roots(H[:i+1, :i]) for i in range(1, n+1)
         ])
-    ax.set_xlim(numpy.min(all_roots.real), numpy.max(all_roots.real))
-    ax.set_ylim(numpy.min(all_roots.imag), numpy.max(all_roots.imag))
-    ax.set_xscale('log')
+    axs[1].set_xlim(numpy.min(all_roots.real), numpy.max(all_roots.real))
+    axs[1].set_ylim(numpy.min(all_roots.imag), numpy.max(all_roots.imag))
+    axs[1].set_xscale('log')
 
-    def plot_zeros(i):
-        print(i)
+    def animate(i):
+        line_res.set_data(list(range(0, i)), solver.resnorms[:i])
         roots = get_gmres_roots(H[:i+1, :i])
-        line.set_data(roots.real, roots.imag)
-        return line,
+        line_roots.set_data(roots.real, roots.imag)
+        #return line,
 
-    ani = animation.FuncAnimation(fig, plot_zeros, numpy.arange(1, n),
+    ani = animation.FuncAnimation(fig, animate, numpy.arange(1, n),
             interval=25)
     pyplot.show()
 
