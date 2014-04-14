@@ -54,9 +54,9 @@ class Stabilization(dolfin.Expression):
         return wk, hk
 
 
-def get_conv_diff_ls():
+def get_conv_diff_ls(n_points=25):
     # mesh and function space
-    mesh = dolfin.RectangleMesh(-1, -1, 1, 1, 25, 25, 'crossed')
+    mesh = dolfin.RectangleMesh(-1, -1, 1, 1, n_points, n_points, 'crossed')
     V = dolfin.FunctionSpace(mesh, 'Lagrange', 1)
 
     wind = dolfin.Expression(('2*x[1]*(1-x[0]*x[0])', '-2*x[0]*(1-x[1]*x[1])'))
