@@ -15,9 +15,13 @@ def get_gmres_roots(H):
 
 def main():
     A, b, x0 = conv_diff.get_conv_diff_ls(10)
+    N = A.shape[0]
 
-    ls = krypy.linsys.LinearSystem(A, b, Ml=None)
-    solver = krypy.deflation.DeflatedGmres(ls, x0=x0, store_arnoldi=True)
+    from scipy.sparse import spdiags
+    D = spdiags(1./A.diagonal(), [0], N, N)
+
+    ls = krypy.linsys.LinearSystem(A, b, Ml=D)
+    solver = krypy.deflation.DeflatedGmres(ls, x0=x0, tol=1e-10, store_arnoldi=True)
 
     H = solver.H
     n_, n = H.shape
