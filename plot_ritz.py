@@ -6,6 +6,9 @@ from matplotlib import pyplot, animation, rc
 # use latex in matplotlib
 rc('text', usetex=True)
 
+# get colors
+colors = pyplot.rcParams['axes.color_cycle']
+
 def get_gmres_roots(H):
     n_, n = H.shape
 
@@ -20,10 +23,12 @@ def main():
     A, b, x0 = conv_diff.get_conv_diff_ls(10)
     N = A.shape[0]
 
+    evals = numpy.linalg.eigvals(numpy.array(A.todense()))
+
     from scipy.sparse import spdiags
     D = spdiags(1./A.diagonal(), [0], N, N)
 
-    ls = krypy.linsys.LinearSystem(A, b, Ml=D)
+    ls = krypy.linsys.LinearSystem(A, b, Ml=None)
     solver = krypy.deflation.DeflatedGmres(ls, x0=x0, tol=1e-10, store_arnoldi=True)
 
     H = solver.H
@@ -32,7 +37,8 @@ def main():
     fig, axs = pyplot.subplots(ncols=2, figsize=(1920./200,1080./200), dpi=100)
     fig.subplots_adjust(wspace=0.3)
     line_res, = axs[0].plot([], [])
-    line_roots, = axs[1].plot([], [], '.')
+    axs[1].plot(evals.real, evals.imag, 'x', color=colors[1], alpha=0.5)
+    line_roots, = axs[1].plot([], [], '.', color=colors[0])
 
     axs[0].set_yscale('log')
     axs[0].set_xlim(0, n)
@@ -41,9 +47,9 @@ def main():
     axs[0].set_xlabel('GMRES iteration $i$')
     axs[0].set_ylabel(r'$\frac{\|r_i\|}{\|b\|}$')
 
-    all_roots = numpy.concatenate([
-        get_gmres_roots(H[:i+1, :i]) for i in range(1, n+1)
-        ])
+    all_roots = numpy.concatenate(
+        [evals] + [get_gmres_roots(H[:i+1, :i]) for i in range(1, n+1)]
+        )
     axs[1].set_xlim(0.95*numpy.min(all_roots.real), 1.05*numpy.max(all_roots.real))
     axs[1].set_ylim(1.05*numpy.min(all_roots.imag), 1.05*numpy.max(all_roots.imag))
     axs[1].set_xscale('log')
@@ -53,12 +59,14 @@ def main():
 
     def animate(i):
         print(i)
+        if i > n:
+            return
         line_res.set_data(list(range(0, i+1)), solver.resnorms[:i+1])
         roots = get_gmres_roots(H[:i+1, :i])
         line_roots.set_data(roots.real, roots.imag)
         #return line,
 
-    ani = animation.FuncAnimation(fig, animate, numpy.arange(1, n),
+    ani = animation.FuncAnimation(fig, animate, numpy.arange(1, n+20),
             interval=100)
 
     #pyplot.show()
